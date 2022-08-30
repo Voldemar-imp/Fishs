@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Fishs
+namespace Fishes
 {
     internal class Program
     {
@@ -12,43 +12,45 @@ namespace Fishs
         {
             Aquarium aquarium = new Aquarium(15);
             bool isMenuWork = true;
+            const char CommandAddRandomFish = '1';
+            const char CommandRemoveFish = '2';
+            const char CommandRemoveDiedFishes = '3';
+            const char CommandExit = '4';
 
             while (isMenuWork)
             {
                 Console.Clear();
                 aquarium.ShowInfo();
                 Console.SetCursorPosition(0, 0);
-                Console.WriteLine("1) добавить случайную рыбку \n2) убрать рыбку \n3) убрать всех мёртвых рыб \n4) выход" +
+                Console.WriteLine($"{CommandAddRandomFish}) добавить случайную рыбку \n{CommandRemoveFish}) убрать рыбку " +
+                    $"\n{CommandRemoveDiedFishes}) убрать всех мёртвых рыб \n{CommandExit}) выход" +
                     "\n\nНажатие любую другую клавишу, чтобы пропустить время");
                 ConsoleKeyInfo key = Console.ReadKey(true);
-                Console.Clear();
+                aquarium.SkipTime();
 
                 switch (key.KeyChar)
                 {
-                    case '1':
+                    case CommandAddRandomFish:
                         aquarium.AddRandomFish();
                         break;
-                    case '2':
+                    case CommandRemoveFish:
                         aquarium.RemoveFish();
                         break;
-                    case '3':
-                        aquarium.RemoveDiedFishs();
+                    case CommandRemoveDiedFishes:
+                        aquarium.RemoveDiedFishes();
                         break;
-                    case '4':
+                    case CommandExit:
                         isMenuWork = false;
-                        break;
-                    default:
-                        aquarium.SkipTime();
                         break;
                 }
             }
         }
-    }   
+    }
 
     class Aquarium
     {
         private static Random _random = new Random();
-        private List<Fish> _fishs = new List<Fish>();
+        private List<Fish> _fishes = new List<Fish>();
         private int _fishsCountMax;
 
         public Aquarium(int fishsCountMax)
@@ -57,13 +59,13 @@ namespace Fishs
 
             for (int i = 0; i < _random.Next(1, _fishsCountMax); i++)
             {
-                _fishs.Add(CreateFish());
+                _fishes.Add(CreateFish());
             }
         }
 
         public void SkipTime()
         {
-            foreach (Fish fish in _fishs)
+            foreach (Fish fish in _fishes)
             {
                 fish.SkipTime();
             }
@@ -77,52 +79,56 @@ namespace Fishs
             {
                 Console.Write("\n" + (i + 1) + ") ");
 
-                if (i < _fishs.Count)
+                if (i < _fishes.Count)
                 {
-                    _fishs[i].ShowInfo();
+                    _fishes[i].ShowInfo();
                 }
             }
         }
 
         public void AddRandomFish()
         {
-            SkipTime();
-
             if (IsFulled() == false)
             {
-                _fishs.Add(CreateFish());
+                _fishes.Add(CreateFish());
             }
         }
 
         public void RemoveFish()
         {
-            _fishs.RemoveAt(GetIndex());
-            SkipTime();
+            Console.Clear();
+
+            if (_fishes.Count == 0)
+            {
+                Console.WriteLine("В аквариуме нет рыб");
+            }
+            else
+            {
+                _fishes.RemoveAt(GetIndex());
+            }
         }
 
-        public void RemoveDiedFishs()
+        public void RemoveDiedFishes()
         {
-            List<Fish> deadFish = new List<Fish>();
+            List<Fish> deadFishes = new List<Fish>();
 
-            foreach (Fish fish in _fishs)
+            foreach (Fish fish in _fishes)
             {
                 if (fish.IsAlive == false)
                 {
-                    deadFish.Add(fish);
+                    deadFishes.Add(fish);
                 }
             }
 
-            foreach (Fish fish in deadFish)
+            foreach (Fish fish in deadFishes)
             {
-                _fishs.Remove(fish);
+                _fishes.Remove(fish);
             }
-
-            SkipTime();
         }
 
         private bool IsFulled()
         {
-            bool isFulled = _fishs.Count >= _fishsCountMax;
+            bool isFulled = _fishes.Count >= _fishsCountMax;
 
             if (isFulled)
             {
@@ -145,7 +151,7 @@ namespace Fishs
                 string userInput = Console.ReadLine();
                 success = int.TryParse(userInput, out index);
 
-                if (success && index > 0 && index <= _fishs.Count)
+                if (success && index > 0 && index <= _fishes.Count)
                 {
                     isCorrect = true;
                 }
@@ -160,23 +166,11 @@ namespace Fishs
 
         private Fish CreateFish()
         {
-            int typesFish = 3;
-            int typeFish1 = 0;
-            int typeFish2 = 1;
-            int coose = _random.Next(typesFish);
+            Fish[] fishesTypes = {new Guppy(ConsoleColor.Blue), new Guppy(ConsoleColor.DarkRed),
+                new GoldFish(ConsoleColor.Yellow), new GoldFish (ConsoleColor.DarkYellow),
+            new Barbus (ConsoleColor.Cyan), new Barbus (ConsoleColor.Green)};
 
-            if (coose == typeFish1)
-            {
-                return new Guppy();
-            }
-            else if (coose == typeFish2)
-            {
-                return new GoldFish();
-            }
-            else
-            {
-                return new Barbus();
-            }
+            return fishesTypes[_random.Next(fishesTypes.Length)];
         }
     }
 
@@ -184,23 +178,19 @@ namespace Fishs
     {
         protected static Random Random = new Random();
         protected ConsoleColor Color;
-        protected ConsoleColor PossibleColor1;
-        protected ConsoleColor PossibleColor2;
         protected string ClassName;
         protected int Age;
-        protected int MaxAge; 
+        protected int MaxAge;
         private int _maxAgeSpread = 50;
 
         public bool IsAlive { get; private set; }
 
-        public Fish(string className, int medianMaxAge, ConsoleColor possibleColor1, ConsoleColor possibleColor2)
+        public Fish(string className, int medianMaxAge, ConsoleColor color)
         {
             ClassName = className;
             MaxAge = GetSpread(medianMaxAge);
             Age = 0;
-            PossibleColor1 = possibleColor1;
-            PossibleColor2 = possibleColor2;
-            Color = SetColor();
+            Color = color;
             IsAlive = true;
         }
 
@@ -216,7 +206,7 @@ namespace Fishs
             Console.ForegroundColor = Color;
 
             if (IsAlive)
-            { 
+            {
                 Console.Write($"{ClassName}. Возраст: {Age} / {MaxAge}. Жива");
             }
             else
@@ -234,20 +224,6 @@ namespace Fishs
             return medianMaxAge;
         }
 
-        private ConsoleColor SetColor()
-        {
-            int colorsNumber = 2;
-
-            if (Random.Next(colorsNumber) == 0)
-            {
-                return PossibleColor1;
-            }
-            else
-            {
-                return PossibleColor2;
-            }
-        }
-
         private void IsDied()
         {
             if (IsAlive)
@@ -259,16 +235,16 @@ namespace Fishs
 
     class Guppy : Fish
     {
-        public Guppy() : base("Гуппи", 30, ConsoleColor.Blue, ConsoleColor.DarkRed) { }
+        public Guppy(ConsoleColor color) : base("Гуппи", 30, color) { }
     }
 
     class GoldFish : Fish
     {
-        public GoldFish() : base("Золотая рыбка", 50, ConsoleColor.DarkYellow, ConsoleColor.Yellow) { }
+        public GoldFish(ConsoleColor color) : base("Золотая рыбка", 50, color) { }
     }
 
     class Barbus : Fish
     {
-        public Barbus() : base("Барбус", 40, ConsoleColor.DarkGreen, ConsoleColor.Cyan) { }
+        public Barbus(ConsoleColor color) : base("Барбус", 40, color) { }
     }
 }
